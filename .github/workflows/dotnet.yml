@@ -1,58 +1,59 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [main]
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+    push:
+        branches: [main]
+        tags:
+            - "v[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
-  contents: write
-  packages: write
+    contents: write
+    packages: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: 8.0.x
 
-      - name: Restore
-        run: dotnet restore
+            - name: Restore
+              run: dotnet restore
 
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+            - name: Build
+              run: dotnet build --configuration Release --no-restore
 
-  package:
-    runs-on: ubuntu-latest
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    package:
+        runs-on: ubuntu-latest
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Build and Push Docker Image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/usermanager:${{ github.ref_name }} .
-          docker push ${{ secrets.DOCKER_USERNAME }}/usermanager:${{ github.ref_name }}
+            - name: Log in to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKER_USERNAME }}
+                  password: ${{ secrets.DOCKER_PASSWORD }}
 
-  release:
-    runs-on: ubuntu-latest
-    needs: package
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v5
+              with:
+                  context: "./User WEBAPI"
+                  file: "./User WEBAPI/Dockerfile"
+                  push: true
+                  tags: souliks/usermanager:v1.0.2
+
+    release:
+        runs-on: ubuntu-latest
+        needs: package
+        if: startsWith(github.ref, 'refs/tags/v')
+        steps:
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ github.ref_name }}
