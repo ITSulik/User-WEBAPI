@@ -43,8 +43,8 @@ jobs:
             - name: Build and push Docker image
               uses: docker/build-push-action@v5
               with:
-                  context: "./UserWEBAPI"
-                  file: "./UserWEBAPI/Dockerfile"
+                  context: .
+                  file: ./Dockerfile
                   push: true
                   tags: souliks/usermanager:v1.0.2
 
